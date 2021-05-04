@@ -1,28 +1,45 @@
 # frozen_string_literal: true
 
+# A Tileset :) TODO
 class Tileset
+  attr_reader :tileset,
+              :x_dimension, :y_dimension,
+              :width, :height
+
   def initialize(directory, x_dimension, y_dimension)
-    @tileset = Array.new(23) { Array.new(13) }
-    (1..299).each do |iterator|
-      iter = iterator - 1
-      iter = 299 if iter.zero?
-      x = (iterator - 1) % 23
-      stylized = iter.to_s
-      stylized = "0#{stylized}" while stylized.length < 3
-      @tileset[x][((iterator - x) / 23)] = "./assets/kenny/PNG/128/towerDefense_tile#{stylized}.png"
-      puts @tileset[x][((iterator - x) / 23)]
+    puts directory
+    @x_dimension = x_dimension
+    @y_dimension = y_dimension
+    if directory[-1] == '/'
+      directory = "#{directory}*"
+    elsif directory[-1] != '*'
+      directory = "#{directory}/*"
     end
-    (0...13).each do |why|
-      (0...23).each do |eks|
-      end
+
+    puts directory
+    images = Dir[directory].sort
+    factors = divisors_of(images.length)
+    puts factors
+    @width = factors[factors.length / 2]
+    @height = factors[(factors.length / 2) - 1]
+
+    @tileset = Array.new(@width, nil) { Array.new(@height, nil) }
+    images.each_with_index do |image, index|
+      x = index % @width
+      puts "Image #{index} is #{image}"
+      #@tileset[x] = [] if @tileset[x].nil?
+      @tileset[x][((index - x) / @width)] = image
+      #puts @tileset[x][((index - x) / 23)]
     end
   end
 
-  def get
-    @tileset
+  def create_image(x_tile, y_tile)
+    Image.new(tileset[x_tile][y_tile],
+              width: x_dimension,
+              height: y_dimension)
   end
 
-  #private
+  private
 
   def divisors_of(num)
     (1..num).select { |n|num % n == 0 }
