@@ -69,8 +69,8 @@ module Camera
     if auto_purge
       objects.each do |item|
         if item.nil?
-          puts "Warning: Nil Object detected in Camera"
-          puts "  Nil Object removed"
+          puts 'Warning: Nil Object detected in Camera'
+          puts '  Nil Object removed'
           objects.delete(obj)
         else
           item.redraw
@@ -79,6 +79,27 @@ module Camera
     else
       objects.each(&:redraw)
     end
+  end
+
+  # Convert screenspace coordinates into worldspace camera ones
+  def self.coordinate_to_worldspace(x, y)
+    angle = Camera.angle * (Math::PI / 180)
+    half_width = Window.width * 0.5
+    half_height = Window.height * 0.5
+
+    [(((x - half_width) / zoom) * Math.cos(-angle)) - (((y - half_height) / zoom) * Math.sin(-angle)) + self.x,
+     (((x - half_width) / zoom) * Math.sin(-angle)) + (((y - half_height) / zoom) * Math.cos(-angle)) + self.y]
+  end
+
+  # Convert worldspace camera coordinates into screenspace ones
+  def self.coordinate_to_screenspace(x, y)
+    angle = Camera.angle * (Math::PI / 180)
+    [(((x - Camera.x) * Math.cos(angle)) - ((y - Camera.y) * Math.sin(angle))) * Camera.zoom + (Window.width * 0.5),
+     (((x - Camera.x) * Math.sin(angle)) + ((y - Camera.y) * Math.cos(angle))) * Camera.zoom + (Window.height * 0.5)]
+  end
+
+  def self.mouse
+    coordinate_to_worldspace(Window.mouse_x, Window.mouse_y)
   end
 
   # Variables changing Camera properties
