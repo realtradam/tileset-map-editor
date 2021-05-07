@@ -7,7 +7,6 @@ class Tileset
               :width, :height
 
   def initialize(directory, width, height)
-    puts directory
     @width = width
     @height = height
     if directory[-1] == '/'
@@ -16,20 +15,16 @@ class Tileset
       directory = "#{directory}/*"
     end
 
-    puts directory
     images = Dir[directory].sort
     factors = divisors_of(images.length)
-    puts factors
     @columns = factors[factors.length / 2]
     @rows = factors[(factors.length / 2) - 1]
 
-    @tileset = Array.new(@columns, nil) { Array.new(@rows, nil) }
+    @tileset = Array.new(@columns) { Array.new(@rows, nil) }
     images.each_with_index do |image, index|
       x = index % @columns
-      puts "Image #{index} is #{image}"
       #@tileset[x] = [] if @tileset[x].nil?
       @tileset[x][((index - x) / @columns)] = image
-      #puts @tileset[x][((index - x) / 23)]
     end
   end
 

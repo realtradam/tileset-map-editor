@@ -2,20 +2,25 @@ require 'ruby2d'
 
 module UIToolkit
   # a nice looking box for placing text inside
+  # only StandardTextbox works as intended
   module Textbox
     class StandardTextbox
-      attr_reader :objects
+      attr_reader :objects, :base,
+        :top_border, :right_border,
+        :left_border, :bottom_border,
+        :base_color, :swap_colors
 
-      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a')
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', swap_colors: false, z: 99)
         @base_color = Color.new(base_color)
         border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
         border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
         @objects ||= []
-        @base = Rectangle.new(x: border_width + x,
-                              y: border_width + y,
-                              width: width - (border_width * 2),
-                              height: height - (border_width * 2),
-                              color: @base_color)
+        @base ||= Rectangle.new(x: border_width + x,
+                                y: border_width + y,
+                                width: width - (border_width * 2),
+                                height: height - (border_width * 2),
+                                color: @base_color,
+                                z: z)
         @objects.push @base
         @top_border = Quad.new(x1: x,
                                y1: y,
@@ -25,7 +30,8 @@ module UIToolkit
                                y3: y + border_width,
                                x4: x + border_width,
                                y4: y + border_width,
-                               color: border_light)
+                               color: border_light,
+                               z: z)
         @objects.push @top_border
         @right_border = Quad.new(x1: x + width,
                                  y1: y,
@@ -35,7 +41,8 @@ module UIToolkit
                                  y3: y + height - border_width,
                                  x4: x + width - border_width,
                                  y4: y + border_width,
-                                 color: border_light)
+                                 color: border_light,
+                                 z: z)
         @objects.push @right_border
         @bottom_border = Quad.new(x1: x,
                                   y1: y + height,
@@ -45,7 +52,8 @@ module UIToolkit
                                   y3: y + height - border_width,
                                   x4: x + border_width,
                                   y4: y + height - border_width,
-                                  color: border_dark)
+                                  color: border_dark,
+                                  z: z)
         @objects.push @bottom_border
         @left_border = Quad.new(x1: x,
                                 y1: y,
@@ -55,8 +63,11 @@ module UIToolkit
                                 y3: y + height - border_width,
                                 x4: x + border_width,
                                 y4: y + border_width,
-                                color: border_dark)
+                                color: border_dark,
+                                z: z)
         @objects.push @left_border
+        @swap_colors = false
+        self.swap_colors = swap_colors
       end
 
       def base_color=(base_color)
@@ -68,6 +79,28 @@ module UIToolkit
         @right_border.color = border_light
         @bottom_border.color = border_dark
         @left_border.color = border_dark
+      end
+
+      def swap_colors=(swap_colors)
+        unless swap_colors == @swap_colors
+          if swap_colors
+            border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
+            border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
+            @left_border.color = @base_color
+            @bottom_border.color = @base_color
+            @top_border.color = border_dark
+            @right_border.color = border_dark
+            @base.color = border_light
+          else
+            border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
+            border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
+            @left_border.color = border_dark
+            @bottom_border.color = border_dark
+            @top_border.color = border_light
+            @right_border.color = border_light
+            @base.color = @base_color
+          end
+        end
       end
 
       def x
@@ -85,7 +118,7 @@ module UIToolkit
       end
 
       def y
-        @top_border.x1
+        @top_border.y1
       end
 
       def y=(y)
@@ -133,11 +166,56 @@ module UIToolkit
         @left_border.y2 += height
         @left_border.y3 += height
       end
+
+      def border_width
+        @top_border.y4 - @top_border.y1
+      end
+
+      def border_width=(border_width)
+        border_width -= self.border_width
+        @base.width += border_width * 2
+        @base.height += border_width * 2
+        @top_border.x3 += border_width
+        @top_border.y3 -= border_width
+        @top_border.x4 -= border_width
+        @top_border.y4 -= border_width
+        @right_border.x3 += border_width
+        @right_border.y3 += border_width
+        @right_border.x4 += border_width
+        @right_border.y4 -= border_width
+        @bottom_border.x3 += border_width
+        @bottom_border.y3 += border_width
+        @bottom_border.x4 -= border_width
+        @bottom_border.y4 += border_width
+        @left_border.x3 -= border_width
+        @left_border.y3 += border_width
+        @left_border.x4 -= border_width
+        @left_border.y4 -= border_width
+        @base.x = @top_border.x4
+        @base.y = @top_border.y4
+      end
+
+      def z
+        @object[0].z
+      end
+
+      def z=(z)
+
+        @objects.each do |object|
+          object.z = z
+        end
+      end
+
+      def contains(x, y)
+        (x >= self.x) && (x <= self.x + width) && (y >= self.y) && (y <= self.y + height)
+      end
     end
 
     class TaperedTextbox < StandardTextbox
-      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a')
-        super(x: x + width - border_width, y: y, width: -(width - (border_width * 2)), height: height, border_width: border_width, base_color: base_color)
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', z: 99)
+        super(x: x + width - border_width, y: y, width: -(width - (border_width * 2)), height: height, border_width: border_width, base_color: base_color, z: z)
+        @base.x += border_width
+        @base.width -= border_width * 2
       end
 
       def x
@@ -145,7 +223,7 @@ module UIToolkit
       end
 
       def width
-        @top_border.x3 - @top_border.x4
+        @top_border.x4 - @top_border.x3
       end
 
       def width=(width)
@@ -163,8 +241,12 @@ module UIToolkit
         self.x += width
       end
     end
+
     class RoundedTextbox < TaperedTextbox
-      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a')
+      attr_reader :top_left, :top_right,
+        :bottom_right, :bottom_left
+
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', z: 99)
         @objects ||= []
         @base_color = Color.new(base_color)
         border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
@@ -175,21 +257,21 @@ module UIToolkit
                                color: border_light)
         @objects << @top_left
         @top_right = Circle.new(x: x + width - border_width,
-                               y: y + border_width,
-                               radius: border_width,
-                               color: border_dark)
+                                y: y + border_width,
+                                radius: border_width,
+                                color: border_dark)
         @objects << @top_right
         @bottom_right = Circle.new(x: x + width - border_width,
-                               y: y + height - border_width,
-                               radius: border_width,
-                               color: border_dark)
+                                   y: y + height - border_width,
+                                   radius: border_width,
+                                   color: border_dark)
         @objects << @bottom_right
         @bottom_left = Circle.new(x: x + border_width,
-                               y: y + height - border_width,
-                               radius: border_width,
-                               color: border_dark)
-        @objects << @top_right
-        super(x: x, y: y, width: width, height: height, border_width: border_width, base_color: base_color)
+                                  y: y + height - border_width,
+                                  radius: border_width,
+                                  color: border_dark)
+        @objects << @bottom_left
+        super(x: x, y: y, width: width, height: height, border_width: border_width, base_color: base_color, z: z)
       end
 
       def x=(x)
@@ -219,71 +301,64 @@ module UIToolkit
           end
         end
       end
+
       def width=(width)
-        #@top_left.x -= width
-        #@top_right.x -= width
+        tempwidth = width - self.width
+        @top_left.x -= tempwidth
+        @bottom_left.x -= tempwidth
         super(width)
+      end
+
+      def base_color=(base_color)
+        @base_color = Color.new(base_color)
+        border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
+        border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
+        @top_left.color = border_light
+        @top_right.color = @bottom_left.color = @bottom_right.color = border_dark
+        super(base_color)
+      end
+
+      def border_width=(border_width)
+        super(border_width)
+        @top_left.x = x + border_width
+        @top_left.y = y + border_width
+        @top_left.radius = border_width
+        @top_right.x = x + width - border_width
+        @top_right.y = y + border_width
+        @top_right.radius = border_width
+        @bottom_right.x = x + width - border_width
+        @bottom_right.y = y + height - border_width
+        @bottom_right.radius = border_width
+        @bottom_left.x = x + border_width
+        @bottom_left.y = y + height - border_width
+        @bottom_left.radius = border_width
       end
     end
   end
 
   # A Hollow Textbox
-  class Borderbox
-    attr_reader :objects
-    def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a')
-      @base_color = Color.new(base_color)
-      border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
-      border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
-      @objects = []
-      @top_border = Quad.new(x1: x,
-                             y1: y,
-                             x2: x + (border_width * 2) + width,
-                             y2: y,
-                             x3: x + (border_width * 1) + width,
-                             y3: y + border_width,
-                             x4: x + border_width,
-                             y4: y + border_width,
-                             color: border_light)
-      @objects.push @top_border
-      @right_border = Quad.new(x1: x + (border_width * 2) + width,
-                               y1: y,
-                               x2: x + (border_width * 2) + width,
-                               y2: y + (border_width * 2) + height,
-                               x3: x + border_width + width,
-                               y3: y + border_width + height,
-                               x4: x + border_width + width,
-                               y4: y + border_width,
-                               color: border_light)
-      @objects.push @right_border
-      @bottom_border = Quad.new(x1: x,
-                                y1: y + (border_width * 2)+ height,
-                                x2: x + (border_width * 2) + width,
-                                y2: y + (border_width * 2) + height,
-                                x3: x + (border_width * 1) + width,
-                                y3: y + border_width + height,
-                                x4: x + border_width,
-                                y4: y + border_width + height,
-                                color: border_dark)
-      @objects.push @right_border
-      @left_border = Quad.new(x1: x,
-                              y1: y,
-                              x2: x,
-                              y2: y + (border_width * 2) + height,
-                              x3: x + border_width,
-                              y3: y + border_width + height,
-                              x4: x + border_width,
-                              y4: y + border_width,
-                              color: border_dark)
-      @objects.push @left_border
+  # Only StandardBorderbox works as intended
+  module Borderbox
+    class StandardBorderbox < UIToolkit::Textbox::StandardTextbox
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', z: 99)
+        super(x: x, y: y, width: width, height: height, border_width: border_width, base_color: base_color, z: z)
+        @base.remove
+        @objects.delete @base
+      end
     end
-    def base_color=(base_color)
-      @base_color = Color.new(base_color)
-      border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
-      border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
-      @top_border.color = border_light
-      @right_border.color = border_light
-      @bottom_border.color = border_dark
-      @left_border.color = border_dark
+    class TaperedBorderbox < UIToolkit::Textbox::TaperedTextbox
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', z: 99)
+        super(x: x, y: y, width: width, height: height, border_width: border_width, base_color: base_color, z: z)
+        @base.remove
+        @objects.delete @base
+      end
+    end
+    class RoundedBorderbox < UIToolkit::Textbox::RoundedTextbox
+      def initialize(x: 0, y: 0, width: 90, height: 90, border_width: 10, base_color: '#ff7f2a', z: 99)
+        super(x: x, y: y, width: width, height: height, border_width: border_width, base_color: base_color, z: z)
+        @base.remove
+        @objects.delete @base
+      end
     end
   end
 end

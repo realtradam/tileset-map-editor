@@ -3,39 +3,26 @@
 require 'ruby2d'
 require_relative 'lib/camera/camera'
 require_relative 'tileset'
-require_relative 'ui-tools'
+require_relative 'ui'
+require_relative 'input'
 
-set width: 1024, height: 720
-
+set width: 640, height: 480
+#set width: 1280, height: 720
+#set width: 1920, height: 1080
 set background: 'navy'
+
+UI.load
 
 @eks = 0
 @why = 0
 
-on :key_held do |event|
-  if event.key == 'w'
-    Camera.y += -10
-  end
-  if event.key == 's'
-    Camera.y += 10
-  end
-  if event.key == 'a'
-    Camera.x += -10
-  end
-  if event.key == 'd'
-    Camera.x += 10
-  end
-end
-on :mouse_up do |event|
-  case event.button
-  when :left
-  @new = @yep.create_image(column: @selected_item[0],
-                                      row: @selected_item[1],
-                                      x: (Camera.mouse[0] - (Camera.mouse[0] % (128 + 12))),
-                                      y: (Camera.mouse[1] - (Camera.mouse[1] % (128 + 12))))
-  Camera << @new
-  end
-end
+# Create on click
+    #@new = @yep.create_image(column: @selected_item[0],
+    #                                    row: @selected_item[1],
+    #                                    x: (Camera.mouse[0] - (Camera.mouse[0] % (128 + 12))),
+    #                                    y: (Camera.mouse[1] - (Camera.mouse[1] % (128 + 12))))
+    #Camera << @new
+
 on :mouse_scroll do |event|
   @selected_item[0] += event.delta_y
   if @selected_item[0] >= @yep.columns
@@ -59,33 +46,55 @@ end
   end
 end
 
-@selected_item = [0,0]
-@selected_image = @yep.create_image(column: @selected_item[0], row: @selected_item[1])
+#@selected_item = [0,0]
+#@selected_image = @yep.create_image(column: @selected_item[0], row: @selected_item[1])
 
 Camera.zoom = 0.25
 
-@textbox = UIToolkit::Textbox::RoundedTextbox.new(y: Window.height - 100, height: 100, width: Window.width, border_width: 35, base_color: 'fuchsia')
-@borderbox = UIToolkit::Borderbox.new(height: 100, width: Window.width - 30, border_width: 15, base_color: 'fuchsia')
-
+UI::Main.mouse_follow.objects.each do |object|
+  Camera << object
+end
 @timer = 0
 update do
+  Camera.x += 10 if Input.held('d')
+  Camera.x -= 10 if Input.held('a')
+  Camera.y -= 10 if Input.held('w')
+  Camera.y += 10 if Input.held('s')
   @timer += 1
   @timer %= 60
   if (@timer % 30).zero?
-    @textbox.base_color = Color.new 'random'
-    @textbox.x += 1
-    @textbox.y -= 1
-    @textbox.width -= 15
-    @borderbox.base_color = Color.new 'random'
-    puts @textbox.x
   end
-  Camera.remove @selected_image
-  @selected_image.remove
-  @selected_image = @yep.create_image(column: @selected_item[0],
-                                      row: @selected_item[1],
-                                      x: (Camera.mouse[0] - (Camera.mouse[0] % (128 + 12))),
-                                      y: (Camera.mouse[1] - (Camera.mouse[1] % (128 + 12))))
-  Camera << @selected_image
+  #Camera.remove @selected_image
+  #@selected_image.remove
+  UI::Main.mouse_follow.x = (Camera.mouse[0] - (Camera.mouse[0] % (128 + 12) + 12))
+  UI::Main.mouse_follow.y = (Camera.mouse[1] - (Camera.mouse[1] % (128 + 12) + 12))
+  UI::Main.history_slots.each do |item|
+    # Ignore if to the left of UI boxes
+    if (Window.mouse_x - 30).positive? && \
+        # Ignore if to the right of UI boxes
+        (Window.mouse_x < (UI::Main.history_slots.length * 75) + 15) && \
+        # If within a box, and not between 2 boxes
+        (((Window.mouse_x - 30) % 75) <= 60) && \
+        # Ignore below boxes
+        (Window.mouse_y >= Window.height - 90) && \
+        # Ignore above boxes
+        (Window.mouse_y <= Window.height - 30) 
+      if item[0].contains(Window.mouse_x, Window.mouse_y)
+        item[0].base_color = 'lime'
+      else
+        item[0].base_color = 'green'
+      end
+    end
+  end
+  #@selected_image = @yep.create_image(column: @selected_item[0],
+  #                                    row: @selected_item[1],
+  #                                    x: (Camera.mouse[0] - (Camera.mouse[0] % (128 + 12))),
+  #                                    y: (Camera.mouse[1] - (Camera.mouse[1] % (128 + 12))))
+  #Camera << @selected_image
+  puts "yep" if Input.down('left')
+  puts "yup" if Input.down('middle')
+  puts "yorp" if Input.down('right')
+  Input.reset
   Camera.redraw
 end
 
