@@ -70,6 +70,18 @@ module UIToolkit
         self.swap_colors = swap_colors
       end
 
+      def remove
+        @objects.each do |object|
+          object.remove
+        end
+      end
+
+      def add
+        @objects.each do |object|
+          object.add
+        end
+      end
+
       def base_color=(base_color)
         @base_color = Color.new(base_color)
         border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
@@ -82,12 +94,12 @@ module UIToolkit
       end
 
       def swap_colors=(swap_colors)
-        unless swap_colors == @swap_colors
           if swap_colors
+            border_base= Color.new([[@base_color.r - 0.1, 0].max, [@base_color.g - 0.1, 0].max, [@base_color.b - 0.1, 0].max, @base_color.a])
             border_light = Color.new([[@base_color.r - 0.2, 0].max, [@base_color.g - 0.2, 0].max, [@base_color.b - 0.2, 0].max, @base_color.a])
             border_dark = Color.new([[@base_color.r - 0.4, 0].max, [@base_color.g - 0.4, 0].max, [@base_color.b - 0.4, 0].max, @base_color.a])
-            @left_border.color = @base_color
-            @bottom_border.color = @base_color
+            @left_border.color = border_base
+            @bottom_border.color = border_base
             @top_border.color = border_dark
             @right_border.color = border_dark
             @base.color = border_light
@@ -100,7 +112,6 @@ module UIToolkit
             @right_border.color = border_light
             @base.color = @base_color
           end
-        end
       end
 
       def x

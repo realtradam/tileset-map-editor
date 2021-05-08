@@ -28,12 +28,13 @@ class Tileset
     end
   end
 
-  def create_image(column:, row:, x: 0, y: 0)
+  def create_image(column:, row:, x: 0, y: 0, z: 0, width: self.width, height: self.height)
     Image.new(tileset[column][row],
               width: width,
               height: height,
               x: x,
-              y: y)
+              y: y,
+              z: z)
   end
 
   private
